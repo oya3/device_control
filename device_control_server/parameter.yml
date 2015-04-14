@@ -1,0 +1,7 @@
+# coding: utf-8
+content-type: qt_server
+content-version: 0.1
+
+contents:
+  description: "qt server パラメータ一式"
+  port: 3001
