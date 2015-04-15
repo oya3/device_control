@@ -1,0 +1,19 @@
+# coding: utf-8
+content-type: ic_card
+content-version: 0.1
+
+contents:
+  description: "標準的なカード 000"
+  read_status: 0 # 0:読み込み成功, 1:読み込み失敗
+  contents:
+    idi: "JP0000"
+    name: "テスト たろう"
+    birthday: "2000/1/1 10:00"
+    money_value: 1000
+    ic_status: 0
+    start_station: "001-001"
+    end_station: "001-002"
+    start_date: "2015/4/1"
+    end_date: "20015/8/31"
+    write_counter: 0
+

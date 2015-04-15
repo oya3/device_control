@@ -4,14 +4,15 @@ $LOAD_PATH.unshift(File.expand_path(File.dirname(__FILE__)))
 require 'Qt4'
 require 'qtuitools'
 require 'yaml'
+require 'json'
 
 require 'pry'
 
 class ServerWidget < Qt::Widget
-  WIDGET_NAME = "device server."
+  WIDGET_NAME = "device server"
   VERSION = "ver.0.2015.04.14.1700"
   
-  attr_accessor :device
+  attr_accessor :ic_card_device
   attr_accessor :parameter
   attr_accessor :ui
   
@@ -35,14 +36,14 @@ class ServerWidget < Qt::Widget
     layout = Qt::VBoxLayout.new
     layout.addWidget(@formWidget)
     setLayout(layout)
-    setAcceptDrops(true)    
-    self.windowTitle = WIDGET_NAME + VERSION
+    setAcceptDrops(true) # drop 許可
+    self.windowTitle = WIDGET_NAME + ' ' + VERSION
   end
   
   # パラメータ設定
   def set_parameter(parameter)
     ui = Hash.new
-    ui['label_msg'] = findChild(Qt::Label, "label_msg")
+    ui['label_user_msg'] = findChild(Qt::Label, "label_user_msg")
     ui['listWidget_log'] = findChild(Qt::ListWidget, "listWidget_log")
     ui['lcdNumber_port'] = findChild(Qt::LCDNumber, "lcdNumber_port")
     # set port number
@@ -56,17 +57,37 @@ class ServerWidget < Qt::Widget
     File.open(filepath) do |file|
       buffer = file.read
     end
-    if( buffer ) then
-      return YAML.load(buffer)
+    if buffer.nil?
+      return nil
     end
-    return nil
+    return YAML.load(buffer)
   end
-
-  def event(event)
-    if event.type == Qt::Event::FileOpen
-      puts "dropfile!!"
+  
+  def dragEnterEvent(event)
+    if event.mimeData().hasFormat("text/uri-list")
+      event.acceptProposedAction()
+    else
+      event.ignore()
     end
-    super(event)
+  end
+  
+  def dropEvent(event)
+    if event.mimeData().hasFormat("text/uri-list")
+      drop_file = event.mimeData().urls().first().toLocalFile() # windows: drop_file は utf-8 で入ってくる。 mac: ???
+      puts drop_file.force_encoding('utf-8').encode('cp932')
+      wlog('drop file:' + drop_file.force_encoding('utf-8'))
+      
+      File.open(drop_file.force_encoding('utf-8').encode('cp932')) do |file|
+        yaml = YAML.load(file.read)
+        ic_card_device.set_data yaml.to_json
+      end
+    else
+      event.ignore()
+    end
+  end
+  
+  def wlog(message)
+    @ui['listWidget_log'].addItem("#{Time.now}:#{message}")
   end
   
 end

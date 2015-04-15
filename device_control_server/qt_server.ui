@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="acceptDrops">
-   <bool>true</bool>
+   <bool>false</bool>
   </property>
   <property name="windowTitle">
    <string>Form</string>
@@ -51,14 +51,14 @@
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QLabel" name="label_msg_2">
+      <widget class="QLabel" name="label_user_msg">
        <property name="font">
         <font>
          <pointsize>16</pointsize>
         </font>
        </property>
        <property name="acceptDrops">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
        <property name="text">
         <string>TextLabel</string>
