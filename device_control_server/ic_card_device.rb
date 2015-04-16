@@ -45,8 +45,8 @@ module PasoriAPI
   extern 'void felica_free(felica *)' # felica ハンドル解放
   extern 'void felica_getidm(felica *, uint8 *)' # IDm 取得
   extern 'void felica_getpmm(felica *, uint8 *)' # PMm 取得
-#  extern 'int felica_read_without_encryption02(felica *, int, int, uint8, uint8 *)' # 暗号化されていないブロックを読み込む
-#  extern 'int felica_write_without_encryption(felica *, int, uint8, uint8 *)' # 暗号化されていないブロックを書き込む
+  extern 'int felica_read_without_encryption02(felica *, int, int, uint8, uint8 *)' # 暗号化されていないブロックを読み込む
+  # extern 'int felica_write_without_encryption(felica *, int, uint8, uint8 *)' # 暗号化されていないブロックを書き込む
   extern 'felica* felica_enum_systemcode(pasori *)' # システムコードの列挙
   extern 'felica* felica_enum_service(pasori *, uint16)' # サービス/エリアコードの列挙
 
@@ -71,7 +71,18 @@ class ICCardDevice
 
     # pasori 接続
     pasori_ptr = PasoriAPI::pasori_open(0)
-    PasoriAPI::pasori_init(pasori_ptr)
+    pasori_res = nil
+    60.times do
+      pasori_res = PasoriAPI::pasori_init(pasori_ptr)
+      if pasori_res == 0
+        break
+      end
+      puts 'ERROR: PaSoRiが異常。きっと接続されてない。確認しやがれ!!'.encode('cp932')
+      sleep(1)
+    end
+    if pasori_res != 0
+      return # 中断
+    end
     # ベース読み込み
     base_ptr = nil
     60.times do
@@ -79,8 +90,11 @@ class ICCardDevice
       if !base_ptr.null?
         break
       end
-      puts "カードかざせ!!!".encode('cp932')
+      puts "ERROR: カードかざせ!!!".encode('cp932')
       sleep(1)
+    end
+    if base_ptr.null?
+      return # 中断
     end
     # base_ptr.null?
     base = PasoriAPI::Felica.new(base_ptr)
