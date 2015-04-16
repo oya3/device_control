@@ -1,6 +1,7 @@
 # coding: utf-8
 require 'fiddle/import'
 require 'fiddle/types'
+require 'yaml'
 
 module PasoriAPI
   extend Fiddle::Importer
@@ -56,11 +57,10 @@ module PasoriAPI
   
 end
 
-
-
-
-
 class ICCardDevice
+  SERVICE_SUICA_HISTORY = 0x090f
+  
+
   attr_accessor :ws_conn
   attr_accessor :connect_signature
   
@@ -68,49 +68,190 @@ class ICCardDevice
     # ここで本当のデバイスの初期化や接続処理を行う
     @connect_signature = nil
     @data = nil
+    
+    @history = Array.new
+    pasori_connect
+    pasori_base_read
+    pasori_history_read
+    pasori_disconnect
+    exit 0
+  end
+  
+  def set_data(data)
+    @data = data
+  end
 
+  def clear_data
+    @data = nil
+  end
+  
+  def read
+    send_data = <<'EOS'
+# coding: utf-8
+content-type: ic_log
+content-version: 0.1
+
+contents:
+  description: "PaSoRiを使って読んだ内容"
+  read_status: 1 # 0:読み込み成功, 1:読み込み失敗
+  contents:
+EOS
+    @history = Array.new
+    pasori_connect
+    pasori_base_read
+    pasori_dump_read
+    pasori_disconnect
+    return send_data
+  end
+  
+  def write(body)
+    # dummy...
+    sleep(5)
+    return 
+  end
+
+  def pasori_connect
     # pasori 接続
-    pasori_ptr = PasoriAPI::pasori_open(0)
+    @pasori_ptr = PasoriAPI::pasori_open(0)
     pasori_res = nil
     60.times do
-      pasori_res = PasoriAPI::pasori_init(pasori_ptr)
+      pasori_res = PasoriAPI::pasori_init(@pasori_ptr)
       if pasori_res == 0
-        break
+        return true # 接続
       end
-      puts 'ERROR: PaSoRiが異常。きっと接続されてない。確認しやがれ!!'.encode('cp932')
+      puts 'ERROR(#{pasori_res}): PaSoRiが異常。きっと接続されてない。確認しやがれ!!'.encode('cp932')
       sleep(1)
     end
-    if pasori_res != 0
-      return # 中断
-    end
+    return false # 接続失敗
+  end
+  
+  def pasori_base_read
     # ベース読み込み
-    base_ptr = nil
+    @base_ptr = nil
     60.times do
-      base_ptr = PasoriAPI::felica_polling(pasori_ptr, PasoriAPI::POLLING_ANY, 0, 0)
-      if !base_ptr.null?
-        break
+      @base_ptr = PasoriAPI::felica_polling(@pasori_ptr, PasoriAPI::POLLING_ANY, 0, 0)
+      if !@base_ptr.null?
+        base = PasoriAPI::Felica.new(@base_ptr)
+        puts "IDm[#{base.IDm}]"
+        puts "PMm[#{base.PMm}]"
+        return true
       end
       puts "ERROR: カードかざせ!!!".encode('cp932')
       sleep(1)
     end
-    if base_ptr.null?
-      return # 中断
+    return false
+  end
+  
+  def get2byte(da,offset)
+    return (da[offset] << 8) | da[offset+1]
+  end
+  
+  def get4byte(da,offset)
+    return (da[offset] << 24) |(da[offset+1] << 16) |(da[offset+2] << 8) | da[offset+3]
+  end
+
+  def get_console_type(ctype)
+    case ctype
+    when 0x03; "清算機"
+    when 0x05; "車載端末"
+    when 0x08; "券売機"
+    when 0x12; "券売機"
+    when 0x16; "改札機"
+    when 0x17; "簡易改札機"
+    when 0x18; "窓口端末"
+    when 0x1a; "改札端末"
+    when 0x1b; "携帯電話"
+    when 0x1c; "乗継清算機"
+    when 0x1d; "連絡改札機"
+    when 0xc7; "物販"
+    when 0xc8; "自販機"
+    else "???"
     end
-    # base_ptr.null?
-    base = PasoriAPI::Felica.new(base_ptr)
-    puts "IDm[#{base.IDm}]"
-    puts "PMm[#{base.PMm}]"
-    PasoriAPI::felica_free(base_ptr);
-    
+  end
+
+  def get_proc_type(proc)
+    case proc
+    when 0x01; "運賃支払"
+    when 0x02; "チャージ"
+    when 0x03; "券購"
+    when 0x04; "清算"
+    when 0x07; "新規"
+    when 0x0d; "バス"
+    when 0x0f; "バス"
+    when 0x14; "オートチャージ"
+    when 0x46; "物販"
+    when 0x49; "入金"
+    when 0xc6; "物販(現金併用)"
+    else "???"
+    end
+  end
+  
+  # 入出金情報取得
+  def get_deposit_info(da,p)
+    p[:time] = nil
+    p[:in_line] = nil
+    p[:in_sta] = nil
+    p[:out_line] = nil
+    p[:out_sta] = nil
+    case p[:ctype]
+    when 0xC7, 0x08 #  // 物販(0xC7), 自販機(0x08)
+      p[:time] = get2byte(da,6)
+      p[:in_line] = da[8]
+      p[:in_sta] = da[9]
+    when 0x05 # // 車載機(0x05)
+      p[:in_line] = get2byte(da, 6)
+      p[:in_sta] = get2byte(da, 8)
+    else
+      p[:in_line] = da[6];
+      p[:in_sta] = da[7];
+      p[:out_line] = da[8];
+      p[:out_sta] = da[9];
+    end
+  end
+
+  # 入出金履歴取得
+  def pasori_history_read
+    index = 0
+    data = ' ' * 16
+    while 0 == PasoriAPI::felica_read_without_encryption02(@base_ptr, SERVICE_SUICA_HISTORY, 0, index, data) do
+      da = data.unpack('C*')
+      p = Hash.new
+      p[:ctype] = da[0]
+      p[:proc] = da[1]
+      p[:date] = get2byte(da,4)
+      p[:balance] = PasoriAPI::n2hs(get2byte(da,10))
+      seq = get4byte(da,12)
+      p[:region] = seq & 0xff
+      p[:seq] = seq >> 8
+      
+      get_deposit_info(da,p)
+      
+      p[:ctype_name] = get_console_type(p[:ctype])
+      p[:proc_name] = get_proc_type(p[:proc])
+      p[:date_string] = sprintf("%02d/%02d/%02d", (p[:date] >> 9), ((p[:date] >> 5) & 0xf), (p[:date] & 0x1f) )
+      
+      p[:time_string] = nil
+      if !p[:time].nil?
+        p[:time_string] = sprintf("%02d:%02d", (p[:time] >> 11), ((time >> 5) & 0x3f))
+      end
+      
+      @history << p
+      index += 1
+    end
+    puts @history
+    return true
+  end
+  
+  def pasori_dump_read
     # システムコード
-    system_code_ptr = PasoriAPI::felica_enum_systemcode(pasori_ptr);
+    system_code_ptr = PasoriAPI::felica_enum_systemcode(@pasori_ptr);
     system_code = PasoriAPI::Felica.new(system_code_ptr)
     puts "num_system_code[#{system_code.num_system_code}]"
     puts "system_code[#{system_code.system_code}]"
     
     (0..(system_code.num_system_code-1)).each do |index|
       printf "system_code[%04X]\n", PasoriAPI::n2hs(system_code.system_code[index])
-      enum_service_ptr = PasoriAPI::felica_enum_service(pasori_ptr, PasoriAPI::n2hs(system_code.system_code[index]) )
+      enum_service_ptr = PasoriAPI::felica_enum_service(@pasori_ptr, PasoriAPI::n2hs(system_code.system_code[index]) )
       enum_service = PasoriAPI::Felica.new(enum_service_ptr)
       
       printf "num_area_code[%d]\n", enum_service.num_area_code
@@ -140,47 +281,20 @@ class ICCardDevice
       
       PasoriAPI::felica_free(enum_service_ptr);
     end
-    
-    
-    
     PasoriAPI::felica_free(system_code_ptr);
-    
-    PasoriAPI::pasori_close(pasori_ptr);
-  end
-  
-  def set_data(data)
-    @data = data
   end
 
-  def clear_data
-    @data = nil
-  end
-  
-  def read
-    send_data = <<'EOS'
-# coding: utf-8
-content-type: ic_card
-content-version: 0.1
-
-contents:
-  description: "標準的なカード 000"
-  read_status: 1 # 0:読み込み成功, 1:読み込み失敗
-  contents:
-EOS
-    # 60 sec 読み込み待ちする
-    60.times do
-      if !@data.nil?
-        send_data = @data
-        break
-      end
-      sleep(1)
+  def pasori_disconnect
+    if ! @base_ptr.nil?
+      PasoriAPI::felica_free(@base_ptr)
+      @base_ptr = nil
     end
-    return send_data
+    if ! @pasori_ptr.nil?
+      PasoriAPI::pasori_close(@pasori_ptr)
+      @pasori_ptr = nil
+    end
   end
+
+
   
-  def write(body)
-    # dummy...
-    sleep(5)
-    return 
-  end
 end
