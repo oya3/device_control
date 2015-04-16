@@ -69,12 +69,14 @@ class ICCardDevice
     @connect_signature = nil
     @data = nil
     
-    @history = Array.new
-    pasori_connect
-    pasori_base_read
-    pasori_history_read
-    pasori_disconnect
-    exit 0
+    # @history = Array.new
+    # pasori_connect
+    # pasori_base_read
+    # pasori_history_read
+    # pasori_disconnect
+    # json = create_history_json
+    # puts json.encode('cp932')
+    # exit 0
   end
   
   def set_data(data)
@@ -87,21 +89,20 @@ class ICCardDevice
   
   def read
     send_data = <<'EOS'
-# coding: utf-8
-content-type: ic_log
-content-version: 0.1
-
-contents:
-  description: "PaSoRiを使って読んだ内容"
-  read_status: 1 # 0:読み込み成功, 1:読み込み失敗
-  contents:
+:content_type: ic_history
+:content_version: 0.1
+:contents:
+  status: 1 # 0:読み込み成功, 1:読み込み失敗
 EOS
     @history = Array.new
+    @idm_pmm = Hash.new
     pasori_connect
     pasori_base_read
-    pasori_dump_read
+    pasori_history_read
     pasori_disconnect
-    return send_data
+    # 成功しかありえないことにしておく。
+    json = create_history_json
+    return json
   end
   
   def write(body)
@@ -132,6 +133,8 @@ EOS
       @base_ptr = PasoriAPI::felica_polling(@pasori_ptr, PasoriAPI::POLLING_ANY, 0, 0)
       if !@base_ptr.null?
         base = PasoriAPI::Felica.new(@base_ptr)
+        @idm_pmm[:idm] = base.IDm
+        @idm_pmm[:pmm] = base.PMm
         puts "IDm[#{base.IDm}]"
         puts "PMm[#{base.PMm}]"
         return true
@@ -140,6 +143,30 @@ EOS
       sleep(1)
     end
     return false
+  end
+  
+  def create_history_json
+    ## coding: utf-8
+    # content-type: ic_log
+    # content-version: 0.1
+    
+    # contents:
+    #   description: "PaSoRiを使って読んだ内容"
+    #   read_status: 1 # 0:読み込み成功, 1:読み込み失敗
+    #   contents:
+    yaml = Hash.new
+    yaml[:content_type] = 'history'
+    yaml[:content_version] = 0.1
+    contents = Hash.new
+    yaml[:contents] = contents
+    contents[:status] = 0
+    
+    idm = @idm_pmm[:idm].collect {|item| sprintf("%02x",item) }
+    pmm = @idm_pmm[:pmm].collect {|item| sprintf("%02x", item) }
+    contents[:idm] = idm.join
+    contents[:pmm] = pmm.join
+    contents[:history] = @history
+    return yaml.to_json
   end
   
   def get2byte(da,offset)
@@ -232,7 +259,7 @@ EOS
       
       p[:time_string] = nil
       if !p[:time].nil?
-        p[:time_string] = sprintf("%02d:%02d", (p[:time] >> 11), ((time >> 5) & 0x3f))
+        p[:time_string] = sprintf("%02d:%02d", (p[:time] >> 11), ((p[:time] >> 5) & 0x3f))
       end
       
       @history << p
