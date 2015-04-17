@@ -12,12 +12,20 @@
 <body>
   <!-- コメントフォーム -->
   <div class="container">
-    <table>
-      <tr>
-        <th>status:</th>
-        <th id="status"></th>
-      </tr>
-    </table>
+    
+    <div class="form-inline">
+      <div class="form-group">
+        <label>PaSoRi端末接続先</label>
+        <input type="text" class="form-control pasori-address" id="exampleInputName2" placeholder="172.0.0.1:3001" value="172.17.10.58:3001">
+      </div>
+    </div>
+
+    <div class="form-inline">
+      <div class="form-group">
+        <label>状態：</label>
+        <label id="status"></label>
+      </div>
+    </div>
     
     <tr>
       <input id="read" type="button" value="read">

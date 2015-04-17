@@ -6,6 +6,7 @@ jQuery(function ($) {
     function open() {
         if (ws == null) {
             // WebSocket の初期化
+            address = "ws://" + $('input.pasori-address').value;
             ws = new WebSocket("ws://172.17.10.58:3001");
             // イベントハンドラの設定
             ws.onopen = onOpen;
