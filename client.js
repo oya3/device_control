@@ -43,23 +43,23 @@ jQuery(function ($) {
         var index = 0;
         var max = history.length;
         for(index = 0; index < max; index++){
-            $('table.history tbody').append('<tr>');
-            $('table.history tbody').append('<th>' + history[index].ctype +'</th>');
-            $('table.history tbody').append('<th>' + history[index].ctype_name +'</th>');
-            $('table.history tbody').append('<th>' + history[index].proc + '</th>');
-            $('table.history tbody').append('<th>' + history[index].proc_name + '</th>');
-            $('table.history tbody').append('<th>' + history[index].date + '</th>');
-            $('table.history tbody').append('<th>' + history[index].date_string + '</th>');
-            $('table.history tbody').append('<th>' + history[index].time + '</th>');
-            $('table.history tbody').append('<th>' + history[index].time_string + '</th>');
-            $('table.history tbody').append('<th>' + history[index].balance + '</th>');
-            $('table.history tbody').append('<th>' + history[index].region + '</th>');
-            $('table.history tbody').append('<th>' + history[index].seq + '</th>');
-            $('table.history tbody').append('<th>' + history[index].in_line + '</th>');
-            $('table.history tbody').append('<th>' + history[index].in_sta + '</th>');
-            $('table.history tbody').append('<th>' + history[index].out_line + '</th>');
-            $('table.history tbody').append('<th>' + history[index].out_st + '</th>');
-            $('table.history tbody').append('</tr>');
+            
+            var line = '<th>' + history[index].ctype +'</th>';
+            line += '<th>' + history[index].ctype_name +'</th>';
+            line += '<th>' + history[index].proc + '</th>';
+            line += '<th>' + history[index].proc_name + '</th>';
+            line += '<th>' + history[index].date + '</th>';
+            line += '<th>' + history[index].date_string + '</th>';
+            line += '<th>' + history[index].time + '</th>';
+            line += '<th>' + history[index].time_string + '</th>';
+            line += '<th>' + history[index].balance + '</th>';
+            line += '<th>' + history[index].region + '</th>';
+            line += '<th>' + history[index].seq + '</th>';
+            line += '<th>' + history[index].in_line + '</th>';
+            line += '<th>' + history[index].in_sta + '</th>';
+            line += '<th>' + history[index].out_line + '</th>';
+            line += '<th>' + history[index].out_sta + '</th>';
+            $('table.history tbody').append('<tr>'+ line + '</tr>');
         }
         
         // var message_li = document.createElement("li");
@@ -67,12 +67,17 @@ jQuery(function ($) {
         // document.getElementById("message_area").appendChild(message_li);
     }
 
+    function clear(event){
+        $('table.idm-ppm tbody *').remove();
+        $('table.history tbody *').remove();
+    }
     
     // メッセージ送信時の処理
     // document.getElementById("read").onclick = function(){
     $("#read").click(function(){
         // var comment = document.getElementById("comment").value;
         // document.getElementById("comment").value = '';
+        $(clear);
         ws.send("read");
     });
     
@@ -84,8 +89,9 @@ jQuery(function ($) {
     // クリア
     //document.getElementById("clear").onclick = function(){
     $("#clear").click(function(){
-        $('table.idm-ppm tbody *').remove();
-        $('table.history tbody *').remove();
+        $(clear);
+        // $('table.idm-ppm tbody *').remove();
+        // $('table.history tbody *').remove();
     });
     
     $(open);

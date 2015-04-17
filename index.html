@@ -11,7 +11,7 @@
 </head>
 <body>
   <!-- コメントフォーム -->
-  <ul>
+  <div class="container">
     <table>
       <tr>
         <th>status:</th>
@@ -33,37 +33,37 @@
         </tr>
       </thead>
       <tbody>
-        
       </tbody>
     </table>
     
-    <table class="table history">
-      <thead>
-        <tr>
-          <th>ctype</th>
-          <th>ctype_name</th>
-          <th>proc</th>
-          <th>proc_name</th>
-          <th>date</th>
-          <th>date_string</th>
-          <th>time</th>
-          <th>time_string</th>
-          <th>balance</th>
-          <th>region</th>
-          <th>seq</th>
-          <th>in_line</th>
-          <th>in_sta</th>
-          <th>out_line</th>
-          <th>out_st</th>
-        </tr>
-      </thead>
-      <tbody>
-        
-      </tbody>
-    </table>
+    <div class="table-responsive">
+      <table class="table table-striped table-hover history">
+        <thead>
+          <tr>
+            <th>ctype</th>
+            <th>ctype_name</th>
+            <th>proc</th>
+            <th>proc_name</th>
+            <th>date</th>
+            <th>date_string</th>
+            <th>time</th>
+            <th>time_string</th>
+            <th>balance</th>
+            <th>region</th>
+            <th>seq</th>
+            <th>in_line</th>
+            <th>in_sta</th>
+            <th>out_line</th>
+            <th>out_sta</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </div>
     
     <!-- 受信内容表示部分 -->
     <ul id="message_area"></ul>
-  </ul>
+  </div>
 </body>
 </html>
