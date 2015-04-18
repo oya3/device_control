@@ -15,7 +15,7 @@
     
     <div class="form-inline">
       <div class="form-group">
-        <label>PaSoRi端末接続先</label>
+        <label>PaSoRi端末接続先：</label>
         <input type="text" class="form-control pasori-address" id="exampleInputName2" placeholder="172.0.0.1:3001" value="172.17.10.58:3001">
       </div>
     </div>
@@ -23,15 +23,20 @@
     <div class="form-inline">
       <div class="form-group">
         <label>状態：</label>
-        <label id="status"></label>
+        <label class="status"></label>
       </div>
     </div>
     
-    <tr>
-      <input id="read" type="button" value="read">
-      <input id="connect" type="button" value="connect">
-      <input id="clear" type="button" value="clear">
-    </tr>
+    <div>
+      <p>
+        <input class="connect btn btn-primary" type="button" value="connect">
+        <input class="disconnect btn btn-primary" type="button" value="disconnect">
+      </p>
+      <p>
+        <input class="read btn btn-info" type="button" value="read">
+        <input class="clear btn btn-default" type="button" value="clear">
+      </p>
+    </div>
     
     <table class="table idm-ppm">
       <thead>

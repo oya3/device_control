@@ -45,9 +45,9 @@ class ServerWidget < Qt::Widget
     ui = Hash.new
     ui['label_user_msg'] = findChild(Qt::Label, "label_user_msg")
     ui['listWidget_log'] = findChild(Qt::ListWidget, "listWidget_log")
-    ui['lcdNumber_port'] = findChild(Qt::LCDNumber, "lcdNumber_port")
+    ui['lineEdit_ip'] = findChild(Qt::LineEdit, "lineEdit_ip")
     # set port number
-    ui['lcdNumber_port'].value = parameter['contents']['port']
+    ui['lineEdit_ip'].text = parameter['contents']['ip'] + ':' + parameter['contents']['port']
     return ui
   end
   

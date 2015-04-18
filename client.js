@@ -6,28 +6,30 @@ jQuery(function ($) {
     function open() {
         if (ws == null) {
             // WebSocket の初期化
-            address = "ws://" + $('input.pasori-address').value;
-            ws = new WebSocket("ws://172.17.10.58:3001");
+            address = $('input.pasori-address').val();
+            // TODO: address のフォーマットチェックが必要...
+            ws = new WebSocket("ws://" + address);
             // イベントハンドラの設定
             ws.onopen = onOpen;
             ws.onmessage = onMessage;
             ws.onclose = onClose;
             ws.onerror = onError;
+            $("label.status").text("接続中...");
         }
     }
     
     function onOpen(event) {
         console.log("接続した");
-        $("#status").text("接続");
+        $("label.status").text("接続");
     }
     function onClose(event) {
         console.log("切断した");
-        $("#status").text("切断");
+        $("label.status").text("切断");
         ws = null;
     }
     function onError(event) {
         console.log("エラー発生");
-        $("#status").text("エラー発生");
+        $("label.status").text("エラー発生");
         
         var message_li = document.createElement("li");
         message_li.textContent = "エラー発生"
@@ -35,7 +37,7 @@ jQuery(function ($) {
     }
     
     function onMessage(event){
-        $(document).find("#status").text("受信");
+        console.log("メッセージ受信");
         var json = JSON.parse(event.data);
         var contents = json.contents;
         var history = contents.history;
@@ -75,7 +77,7 @@ jQuery(function ($) {
     
     // メッセージ送信時の処理
     // document.getElementById("read").onclick = function(){
-    $("#read").click(function(){
+    $("input.read").click(function(){
         // var comment = document.getElementById("comment").value;
         // document.getElementById("comment").value = '';
         $(clear);
@@ -83,17 +85,24 @@ jQuery(function ($) {
     });
     
     // 接続
-    $("#connect").click( function(){
+    $("input.connect").click( function(){
         $(open);
+    });
+    
+    // 切断
+    $("input.disconnect").click( function(){
+        if (ws != null) {
+            ws.close;
+        }
     });
     
     // クリア
     //document.getElementById("clear").onclick = function(){
-    $("#clear").click(function(){
+    $("input.clear").click(function(){
         $(clear);
         // $('table.idm-ppm tbody *').remove();
         // $('table.history tbody *').remove();
     });
     
-    $(open);
+    // $(open);
 });

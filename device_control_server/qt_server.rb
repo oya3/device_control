@@ -47,7 +47,8 @@ EM.run do
   
   
   connections = Hash.new # 接続情報保持用
-  EM::WebSocket.start(host: "172.17.10.58", port: widget.parameter['contents']['port']) do |ws_conn|
+  # EM::WebSocket.start(host: "127.0.0.1", port: widget.parameter['contents']['port']) do |ws_conn|
+  EM::WebSocket.start(host: widget.parameter['contents']['ip'], port: widget.parameter['contents']['port']) do |ws_conn|
     # 接続受信
     ws_conn.onopen do
       puts "event[onopen] : open #{ws_conn.signature}"
