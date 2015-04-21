@@ -4,5 +4,5 @@ content-version: 0.1
 
 contents:
   description: "qt server パラメータ一式"
-  ip: '192.168.2.106'
+  ip: '192.168.10.58'
   port: '3001'

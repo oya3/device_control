@@ -1,1 +1,1 @@
-ruby -run -e httpd -- --port 3000 .
+ruby -run -e httpd -- --port 3000 ./public
