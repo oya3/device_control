@@ -1,0 +1,18 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    em-websocket (0.5.1)
+      eventmachine (>= 0.12.9)
+      http_parser.rb (~> 0.6.0)
+    eventmachine (1.0.7)
+    http_parser.rb (0.6.0)
+    qtbindings (4.8.6.1-x86-mingw32)
+      qtbindings-qt (= 4.8.6)
+    qtbindings-qt (4.8.6-x86-mingw32)
+
+PLATFORMS
+  x86-mingw32
+
+DEPENDENCIES
+  em-websocket
+  qtbindings
